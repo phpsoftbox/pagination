@@ -18,4 +18,9 @@ interface PaginationContextResolverInterface
     public function page(): ?int;
 
     public function perPage(): ?int;
+
+    /**
+     * Имя query-параметра страницы: по нему резолвер читает номер, и с ним же строятся ссылки.
+     */
+    public function pageParam(): string;
 }

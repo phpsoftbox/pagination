@@ -81,7 +81,8 @@ final readonly class PaginationResult implements PaginationResultInterface
 
     private function from(): int
     {
-        if ($this->total === 0) {
+        // Страница за последней пуста: как при total = 0, а не from > to.
+        if ($this->total === 0 || $this->page > $this->lastPage()) {
             return 0;
         }
 
@@ -90,7 +91,7 @@ final readonly class PaginationResult implements PaginationResultInterface
 
     private function to(): int
     {
-        if ($this->total === 0) {
+        if ($this->total === 0 || $this->page > $this->lastPage()) {
             return 0;
         }
 
@@ -108,7 +109,8 @@ final readonly class PaginationResult implements PaginationResultInterface
 
     private function previousPage(): ?int
     {
-        return $this->page > 1 ? $this->page - 1 : null;
+        // С несуществующей страницы «назад» ведёт на последнюю существующую.
+        return $this->page > 1 ? min($this->page - 1, $this->lastPage()) : null;
     }
 
     private function nextPage(): ?int
@@ -129,8 +131,10 @@ final readonly class PaginationResult implements PaginationResultInterface
             'url'    => $this->previousPage() !== null ? $this->urlForPage($this->previousPage()) : null,
         ];
 
-        $start = max(1, $this->page - $this->window);
-        $end   = min($this->lastPage(), $this->page + $this->window);
+        // Окно строится вокруг существующей страницы: для страницы за последней номера не пропадают.
+        $current = min($this->page, $this->lastPage());
+        $start   = max(1, $current - $this->window);
+        $end     = min($this->lastPage(), $current + $this->window);
 
         for ($page = $start; $page <= $end; $page++) {
             $links[] = [

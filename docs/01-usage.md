@@ -28,30 +28,28 @@ $paginator = new Paginator(perPage: 20, resolver: $resolver);
 
 ## Настройка через DI
 
-```php
-use DI\ContainerBuilder;
-use function DI\autowire;
-use function DI\get;
+`RequestPaginationContextResolver` зависит от текущего запроса, поэтому не регистрируйте его и `Paginator` с ним как
+синглтоны контейнера: в долгоживущем процессе все запросы получили бы резолвер первого. Создавайте их на запрос —
+например, фабрикой, которой передаётся запрос:
 
+```php
 use PhpSoftBox\Pagination\Paginator;
 use PhpSoftBox\Pagination\RequestPaginationContextResolver;
 use Psr\Http\Message\ServerRequestInterface;
 
-$builder = new ContainerBuilder();
-
-$builder->addDefinitions([
-    RequestPaginationContextResolver::class => function () {
-        return new RequestPaginationContextResolver(
-            get(ServerRequestInterface::class),
-            perPageParam: 'per_page',
-            perPageMax: 100,
+final readonly class PaginatorFactory
+{
+    public function forRequest(ServerRequestInterface $request): Paginator
+    {
+        return new Paginator(
+            perPage: 20,
+            resolver: new RequestPaginationContextResolver($request, perPageParam: 'per_page', perPageMax: 100),
         );
-    },
-    Paginator::class => autowire()
-        ->constructor(perPage: 20, resolver: get(RequestPaginationContextResolver::class)),
-]);
+    }
+}
 
-$container = $builder->build();
+// В контроллере:
+$paginator = $paginatorFactory->forRequest($request);
 ```
 
 Результат:
