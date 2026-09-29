@@ -7,7 +7,11 @@ namespace PhpSoftBox\Pagination;
 use PhpSoftBox\Pagination\Contracts\PaginationContextResolverInterface;
 
 use function array_replace;
+use function intdiv;
 use function max;
+use function min;
+
+use const PHP_INT_MAX;
 
 final class Paginator
 {
@@ -16,10 +20,10 @@ final class Paginator
      */
     private array $query = [];
 
-    private string $path      = '';
-    private ?string $fragment = null;
-    private int $window       = 2;
-    private string $pageParam = 'page';
+    private string $path       = '';
+    private ?string $fragment  = null;
+    private int $window        = 2;
+    private ?string $pageParam = null;
     private ?PaginationContextResolverInterface $resolver;
 
     public function __construct(
@@ -98,7 +102,8 @@ final class Paginator
     }
 
     /**
-     * Настраивает имя query-параметра для номера страницы.
+     * Имя query-параметра страницы для ссылок. По умолчанию — как у резолвера (он же читает номер), без резолвера —
+     * `page`. Задавайте имя в резолвере, иначе ссылки и чтение разойдутся.
      */
     public function pageParam(string $param): self
     {
@@ -133,6 +138,9 @@ final class Paginator
         $perPageValue = $perPage ?? $resolver?->perPage() ?? $this->perPage;
         $perPageValue = max(1, $perPageValue);
 
+        // Смещение (page - 1) * perPage должно помещаться в int.
+        $pageValue = min($pageValue, intdiv(PHP_INT_MAX, $perPageValue));
+
         return new PaginationResult(
             items: $list,
             total: max(0, $total),
@@ -142,7 +150,7 @@ final class Paginator
             query: $query,
             fragment: $fragment,
             window: $this->window,
-            pageParam: $this->pageParam,
+            pageParam: $this->pageParam ?? $resolver?->pageParam() ?? 'page',
         );
     }
 }

@@ -17,6 +17,8 @@ use const FILTER_VALIDATE_INT;
 
 final readonly class RequestPaginationContextResolver implements PaginationContextResolverInterface
 {
+    public const int DEFAULT_PAGE_MAX = 1_000_000;
+
     /**
      * @param string $pageParam Имя query-параметра страницы.
      * @param string|null $perPageParam Имя query-параметра perPage (null — отключено).
@@ -27,7 +29,13 @@ final readonly class RequestPaginationContextResolver implements PaginationConte
         private ?string $perPageParam = null,
         private int $perPageMin = 1,
         private ?int $perPageMax = null,
+        private int $pageMax = self::DEFAULT_PAGE_MAX,
     ) {
+    }
+
+    public function pageParam(): string
+    {
+        return $this->pageParam;
     }
 
     public function path(): ?string
@@ -47,9 +55,12 @@ final readonly class RequestPaginationContextResolver implements PaginationConte
         return $this->request->getQueryParams();
     }
 
+    /**
+     * Номер страницы не больше `$pageMax`: `?page=9223372036854775807` не переполняет расчёт смещения.
+     */
     public function page(): ?int
     {
-        return $this->extractInt($this->pageParam);
+        return $this->extractInt($this->pageParam, max: $this->pageMax);
     }
 
     public function perPage(): ?int
