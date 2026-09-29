@@ -91,10 +91,10 @@ final class PaginationResultTest extends TestCase
     #[Test]
     public function requestProvidesPathAndPerPage(): void
     {
-        $uri = $this->createMock(UriInterface::class);
+        $uri = $this->createStub(UriInterface::class);
         $uri->method('getPath')->willReturn('/users');
 
-        $request = $this->createMock(ServerRequestInterface::class);
+        $request = $this->createStub(ServerRequestInterface::class);
         $request->method('getUri')->willReturn($uri);
         $request->method('getQueryParams')->willReturn(['per_page' => '3']);
 
